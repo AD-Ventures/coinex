@@ -13,21 +13,11 @@ pip3 install coinex
 
 ```python
 from coinex import CoinEx
-from secrets import APIKEY, SECRET  # api key and secret
 
 # public functions (no APIKEY/Secret needed)
-markets = CoinEx.getMarketSummaries().result
+markets = CoinEx.getMarketList().result
 
-order = CoinEx.getOrderBook('ETH/BTC').result
-
-# market and account functions (require APIKEY/Secret)
-t = CoinEx(APIKEY, SECRET)
-
-request = t.getBalance()
-
-if request.success:
-    balance = request.result
-```
+marketInfo = CoinEx.getMarketInfoSingle('BANBTC').result
 
 ## Support
 
