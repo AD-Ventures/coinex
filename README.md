@@ -12,7 +12,7 @@ pip3 install coinex
 ## Usage
 
 ```python
-from txbit import CoinEx
+from coinex import CoinEx
 from secrets import APIKEY, SECRET  # api key and secret
 
 # public functions (no APIKEY/Secret needed)
