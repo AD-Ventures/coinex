@@ -65,65 +65,52 @@ class CoinEx:
         url = CoinEx.expandPathToUrl(path, params)
         return requests.get(url)
 
+    def publicRequest(path, params={}):
+        res = CoinEx.request(path, params)
+        rjson = res.json()
+        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+
+
 ## COMMON FUNCTIONS ---------------
 
     def getCurrencyRates():
-        res = CoinEx.request('common/currency/rate')
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('common/currency/rate')
 
-    def getAssetConfig(coin_type = ''):
+    def getAssetConfig(coin_type=''):
         params = {'coin_type': coin_type}
-        res = CoinEx.request('common/asset/config', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('common/asset/config', params)
+
 
 ## MARKET FUNCTIONS ---------------
 
     def getMarketList():
-        res = CoinEx.request('market/list')
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/list')
 
     def getMarketStatistics(market):
         params = {'market': market}
-        res = CoinEx.request('market/ticker', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/ticker', params)
 
-    def getMarketDepth(market, merge, limit = 20):
+    def getMarketDepth(market, merge, limit=20):
         params = {'market': market, 'merge': merge, 'limit': str(limit)}
-        res = CoinEx.request('market/depth', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/depth', params)
 
-    def getMarketTransactions(market, last_id = 0, limit = 100):
+    def getMarketTransactions(market, last_id=0, limit=100):
         params = {'market': market, 'last_id': str(last_id), 'limit': str(limit)}
-        res = CoinEx.request('market/deals', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/deals', params)
 
-    def getMarketKLineData(market, ttype, limit = 100):
+    def getMarketKLineData(market, ttype, limit=100):
         params = {'market': market, 'type': ttype, 'limit': str(limit)}
-        res = CoinEx.request('market/deals', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/deals', params)
 
     def getMarketInfo():
-        res = CoinEx.request('market/info')
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/info')
 
     def getMarketInfoSingle(market):
         params = {'market': market}
-        res = CoinEx.request('market/detail', params)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('market/detail', params)
 
     def getMarketAMM():
-        res = CoinEx.request('amm/market')
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinEx.publicRequest('amm/market')
 
 if __name__ == '__main__':
     print(CoinEx.getMarketAMM())
