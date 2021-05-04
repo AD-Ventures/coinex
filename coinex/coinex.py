@@ -50,7 +50,7 @@ class CoinEx:
         self.APIKey = APIKey
         self.Secret = Secret
 
-    def expandPathToUrl(path, params={}):
+    def __expandPathToUrl__(path, params={}):
         """adds onto the base url for specific methods"""
         url = CoinEx.endpoint + path
         url += '?' if params else ''
@@ -60,13 +60,13 @@ class CoinEx:
 
         return url
 
-    def request(path, params={}):
+    def __request__(path, params={}):
         """uses `expandPathToUrl()` to make the API call"""
-        url = CoinEx.expandPathToUrl(path, params)
+        url = CoinEx.__expandPathToUrl__(path, params)
         return requests.get(url)
 
     def publicRequest(path, params={}):
-        res = CoinEx.request(path, params)
+        res = CoinEx.__request__(path, params)
         rjson = res.json()
         return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
 
