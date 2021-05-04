@@ -1,11 +1,7 @@
-import hashlib
-import hmac
 import json
 
 
 import requests
-
-from time import time
 
 class CoinExResponse:
     def __init__(self, success, message, result):
