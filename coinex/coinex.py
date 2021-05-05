@@ -49,22 +49,13 @@ class CoinEx:
         self.Secret = Secret
 
     def _expandParams(params={}):
-        url = ''
-
-        for key in params:
-            url += key + '=' + str(params[key]) + '&'
-
-        return url
+        return '&'.join([key + '=' + str(params[key]) for key in sorted(params)])
 
     def _expandPathToUrl(path, params={}):
         """adds onto the base url for specific methods"""
         url = CoinEx.endpoint + path
         url += '?' if params else ''
-
-        for key in params:
-            url += key + '=' + str(params[key]) + '&'
-
-        return url
+        return url + CoinEx._expandParams(params)
 
     def _request(path, params={}):
         """uses `expandPathToUrl()` to make the API call"""
@@ -73,6 +64,19 @@ class CoinEx:
 
     def publicRequest(self, path, params={}):
         res = CoinEx._request(path, params)
+        rjson = res.json()
+        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+
+    def authenticatedRequest(self, path, params={}):
+        params['access_id'] = self.AccessID
+        params['tonce'] = int(time.time() * 1000)
+        url = CoinEx._expandPathToUrl(path, params)
+
+        data = CoinEx._expandParams(params) + '&secret_key=' + self.Secret
+        signature = hashlib.md5(data.encode()).hexdigest().upper()
+        headers = {'authorization': signature}
+
+        res = requests.get(url, headers=headers)
         rjson = res.json()
         return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
 
@@ -122,24 +126,13 @@ class CoinEx:
 ## ACCOUNT FUNCTIONS ---------------
 
     def getAccountInfo(self):
-        tonce = time.time() * 1000
-        params = {'access_id': self.AccessID, 'tonce': tonce, 'secret_key': self.Secret}
-        signature = hashlib.md5(CoinEx._expandParams(params).encode()).hexdigest().upper()
-        headers = {'authorization': signature}
-        url = CoinEx._expandPathToUrl('balance/info', params)
-        res = requests.get(url, headers=headers)
-        rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return self.authenticatedRequest('balance/info')
 
+    def getAccountDepositAddress(self, coin_type, smart_contract_name=None):
+        return self.authenticatedRequest('balance/deposit/address/' + coin_type)
 
 if __name__ == '__main__':
-    coinex = CoinEx()
-    print(coinex.getMarketAMM())
-
     from secret import AccessID, Secret
     coinex = CoinEx(AccessID, Secret)
     print(coinex.getAccountInfo())
-
-    s = 'access_id=4DA36FFC61334695A66F8D29020EB589&amount=1.0&market=BTCBCH&price=680&tonce=1513746038205&type=buy&secret_key=B51068CF10B34E7789C374AB932696A05E0A629BE7BFC62F'
-    signature = hashlib.md5(s.encode()).hexdigest().upper()
-    print(signature)
+    print(coinex.getAccountDepositAddress('BTC'))
