@@ -1,4 +1,6 @@
+import hashlib
 import json
+import time
 
 
 import requests
@@ -24,17 +26,17 @@ class CoinEx:
     ----------
     endpoint : str
         the base url for API calls
-    APIKey : str
+    AccessID : str
         key for working with the Market and Account methods
     Secret : str
         secret for working with the Market and Account methods
 
     Methods
     -------
-    expandPathToUrl(path, params={}):
+    _expandPathToUrl(path, params={}):
        adds onto the base url for specific methods
-    request(path, params={}):
-        uses `expandPathToUrl()` to make the API call
+    _request(path, params={}):
+        uses `_expandPathToUrl()` to make the API call
 
     Notes
     -----
@@ -42,71 +44,102 @@ class CoinEx:
     """
     endpoint = 'https://api.coinex.com/v1/'
 
-    def __init__(self, APIKey, Secret):
-        self.APIKey = APIKey
+    def __init__(self, AccessID=None, Secret=None):
+        self.AccessID = AccessID
         self.Secret = Secret
 
-    def __expandPathToUrl__(path, params={}):
+    def _expandParams(params={}):
+        url = ''
+
+        for key in params:
+            url += key + '=' + str(params[key]) + '&'
+
+        return url
+
+    def _expandPathToUrl(path, params={}):
         """adds onto the base url for specific methods"""
         url = CoinEx.endpoint + path
         url += '?' if params else ''
 
         for key in params:
-            url += key + '=' + params[key] + '&'
+            url += key + '=' + str(params[key]) + '&'
 
         return url
 
-    def __request__(path, params={}):
+    def _request(path, params={}):
         """uses `expandPathToUrl()` to make the API call"""
-        url = CoinEx.__expandPathToUrl__(path, params)
+        url = CoinEx._expandPathToUrl(path, params)
         return requests.get(url)
 
-    def publicRequest(path, params={}):
-        res = CoinEx.__request__(path, params)
+    def publicRequest(self, path, params={}):
+        res = CoinEx._request(path, params)
         rjson = res.json()
         return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
 
 
 ## COMMON FUNCTIONS ---------------
 
-    def getCurrencyRates():
-        return CoinEx.publicRequest('common/currency/rate')
+    def getCurrencyRates(self):
+        return self.publicRequest('common/currency/rate')
 
-    def getAssetConfig(coin_type=''):
+    def getAssetConfig(self, coin_type=''):
         params = {'coin_type': coin_type}
-        return CoinEx.publicRequest('common/asset/config', params)
+        return self.publicRequest('common/asset/config', params)
 
 
 ## MARKET FUNCTIONS ---------------
 
-    def getMarketList():
-        return CoinEx.publicRequest('market/list')
+    def getMarketList(self):
+        return self.publicRequest('market/list')
 
-    def getMarketStatistics(market):
+    def getMarketStatistics(self, market):
         params = {'market': market}
-        return CoinEx.publicRequest('market/ticker', params)
+        return self.publicRequest('market/ticker', params)
 
-    def getMarketDepth(market, merge, limit=20):
-        params = {'market': market, 'merge': merge, 'limit': str(limit)}
-        return CoinEx.publicRequest('market/depth', params)
+    def getMarketDepth(self, market, merge, limit=20):
+        params = {'market': market, 'merge': merge, 'limit': limit}
+        return self.publicRequest('market/depth', params)
 
-    def getMarketTransactions(market, last_id=0, limit=100):
-        params = {'market': market, 'last_id': str(last_id), 'limit': str(limit)}
-        return CoinEx.publicRequest('market/deals', params)
+    def getMarketTransactions(self, market, last_id=0, limit=100):
+        params = {'market': market, 'last_id': last_id, 'limit': limit}
+        return self.publicRequest('market/deals', params)
 
-    def getMarketKLineData(market, ttype, limit=100):
-        params = {'market': market, 'type': ttype, 'limit': str(limit)}
-        return CoinEx.publicRequest('market/deals', params)
+    def getMarketKLineData(self, market, ttype, limit=100):
+        params = {'market': market, 'type': ttype, 'limit': limit}
+        return self.publicRequest('market/deals', params)
 
-    def getMarketInfo():
-        return CoinEx.publicRequest('market/info')
+    def getMarketInfo(self):
+        return self.publicRequest('market/info')
 
-    def getMarketInfoSingle(market):
+    def getMarketInfoSingle(self, market):
         params = {'market': market}
-        return CoinEx.publicRequest('market/detail', params)
+        return self.publicRequest('market/detail', params)
 
-    def getMarketAMM():
-        return CoinEx.publicRequest('amm/market')
+    def getMarketAMM(self):
+        return self.publicRequest('amm/market')
+
+
+## ACCOUNT FUNCTIONS ---------------
+
+    def getAccountInfo(self):
+        tonce = time.time() * 1000
+        params = {'access_id': self.AccessID, 'tonce': tonce, 'secret_key': self.Secret}
+        signature = hashlib.md5(CoinEx._expandParams(params).encode()).hexdigest().upper()
+        headers = {'authorization': signature}
+        url = CoinEx._expandPathToUrl('balance/info', params)
+        res = requests.get(url, headers=headers)
+        rjson = res.json()
+        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+
 
 if __name__ == '__main__':
-    print(CoinEx.getMarketAMM())
+    coinex = CoinEx()
+    print(coinex.getMarketAMM())
+
+    from secret import AccessID, Secret
+    coinex = CoinEx(AccessID, Secret)
+    print(coinex.getAccountInfo())
+
+    s = 'access_id=4DA36FFC61334695A66F8D29020EB589&amount=1.0&market=BTCBCH&price=680&tonce=1513746038205&type=buy&secret_key=B51068CF10B34E7789C374AB932696A05E0A629BE7BFC62F'
+    signature = hashlib.md5(s.encode()).hexdigest().upper()
+    print(signature)

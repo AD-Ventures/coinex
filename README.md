@@ -15,9 +15,10 @@ pip3 install coinex
 from coinex import CoinEx
 
 # public functions (no APIKEY/Secret needed)
-markets = CoinEx.getMarketList().result
+coinex = CoinEx()
 
-marketInfo = CoinEx.getMarketInfoSingle('BANBTC').result
+markets = coinex.getMarketList().result
+marketInfo = coinex.getMarketInfoSingle('BANBTC').result
 
 ## Support
 
