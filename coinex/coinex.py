@@ -65,9 +65,11 @@ class CoinEx:
     def publicRequest(self, path, params={}):
         res = CoinEx._request(path, params)
         rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinExResponse(rjson['code'], rjson['message'], rjson['data'])
 
     def authenticatedRequest(self, path, params={}):
+        if self.AccessID is None or self.Secret is None:
+            raise ValueError('APIKey and Secret must be supplied to use this methods')
         params['access_id'] = self.AccessID
         params['tonce'] = int(time.time() * 1000)
         url = CoinEx._expandPathToUrl(path, params)
@@ -78,7 +80,7 @@ class CoinEx:
 
         res = requests.get(url, headers=headers)
         rjson = res.json()
-        return CoinExResponse(res.ok and rjson['code'] == 0, rjson['message'], rjson['data'])
+        return CoinExResponse(rjson['code'], rjson['message'], rjson['data'])
 
 
 ## COMMON FUNCTIONS ---------------
